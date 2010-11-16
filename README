@@ -1,0 +1,62 @@
+Wosbee::Admin
+
+
+This module provides a management interface for Wosbee.com and
+possibly other hosted web shop services running the Smilehouse
+Workspace e-commerce software (tested with version 1.13). 
+
+This module is mostly useful for the users of free-of-charge Wosbee 
+service. If you need - and you most certainly will when your business
+grows - anything more powerful, you'd be better off paying for
+the enterprise hosting plan or running your own licensed copy
+of the Workspace software with all the fancy integration features.
+(Unless you decide to migrate to a free/libre e-commerce solution.)
+
+The purpose of this module is just to make some simple day to day
+tasks, such as uploading style sheet files or generating inventory
+statements, little less painful.
+
+**Please note that this software is written by a third party and is NOT 
+SUPPORTED by Smilehouse.** This software does not use any public APIs. 
+Instead it emulates a human ("scraping"), and thus it WILL break when
+Wosbee changes it's web interface. There is NO WARRANTY, to the
+extent permitted by law. 
+
+
+INSTALLATION
+
+To install this module, run the following commands:
+
+	perl Build.PL
+	./Build
+	./Build test
+	./Build install
+
+SUPPORT AND DOCUMENTATION
+
+After installing, you can find documentation for this module with the
+perldoc command.
+
+    perldoc Wosbee::Admin
+
+Seestieto provides commercial Perl support and e-commerce consultation,
+among other services. Maybe we can help you to build a successful
+web shop for your business? Please send your inquiries to 
+info@seestieto.pl.
+
+
+EXAMPLES
+
+The example directory contains some sample scripts using this module.
+
+
+LICENSE AND COPYRIGHT
+
+Copyright (C) 2010 Seestieto
+
+This program is free software; you can redistribute it and/or modify it
+under the terms of either: the GNU General Public License as published
+by the Free Software Foundation; or the Artistic License.
+
+See http://dev.perl.org/licenses/ for more information.
+
