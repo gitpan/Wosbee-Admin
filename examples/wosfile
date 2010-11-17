@@ -1,0 +1,106 @@
+#!/usr/bin/perl -w
+
+use 5.008;
+use strict;
+use Wosbee::Admin;
+use Getopt::Long;
+use Pod::Usage;
+
+my $upload = undef;
+my $zipload = undef;
+my $rm = undef;
+my $mkdir = undef;
+my $udir = undef;
+my $lspath = undef;
+my $org = $ENV{WOSORG} || "";
+my $user = $ENV{WOSUSER} ||  "";
+my $pwd = $ENV{WOSPWD} || "";
+my $host = undef;
+my $opts = GetOptions("organization=s" => \$org,
+                      "user=s"         => \$user, 
+                      "password=s"     => \$pwd,
+                      "upload=s"       => \$upload,
+                      "zipload=s"      => \$zipload,
+                      "mkdir=s"        => \$mkdir,
+                      "rm=s"           => \$rm,
+                      "dir:s"          => \$udir,
+                      "host:s"         => \$host,
+                      "ls:s"           => \$lspath)
+           or pod2usage(2);
+
+$org && $user && $pwd && 
+  ($upload || $zipload || $lspath || $mkdir || $rm || defined $lspath) 
+  || pod2usage(2);
+
+my $w = Wosbee::Admin->new(organization => $org,
+                                   user => $user,
+                               password => $pwd);
+
+if (defined $lspath) { print scalar $w->filemanager_ls($lspath); }
+if ($upload)         { $w->filemanager_upload($upload, $udir); }
+if ($zipload)        { $w->filemanager_upload_zip($zipload, $udir); }
+if ($mkdir)          { $w->filemanager_mkdir($mkdir); }
+if ($rm)             { $w->filemanager_rm($rm); }
+
+__END__
+
+=head1 NAME
+
+wosfile - Access Wosbee files from command line
+
+=head1 SYNOPSIS
+
+wosfile [options] operation
+
+Login credentials:
+
+  --organization=ORG         Wosbee organization
+  --user=USERNAME            Wosbee username
+  --password=PASSWORD        Wosbee password
+
+Operation:
+
+  --ls[=PATH]                List files
+  --upload=FILE              Upload file
+  --zipload=ZIPFILE          Upload zip file
+  --mkdir=PATH               Create a directory
+  --rm=FILE                  Remove a file or directory
+
+Options:
+
+  --dir=DIRECTORY            Optional directory for uploads
+
+=head1 DESCRIPTION
+
+Uses the L<Wosbee::Admin> module to provide access to Wosbee.com
+files from command line, without needing to use a web browser
+and the somewhat cumbersome web interface.
+
+Login credentials can also be given as environment variables:
+
+=over 4
+
+=item WOSORG
+
+Organization.
+
+=item WOSUSER
+
+Username.
+
+=item WOSPWD
+
+Password.
+
+=back
+
+=head1 AUTHOR
+
+Henrik Ahlgren E<lt>pablo@seestieto.plE<gt>
+
+=head1 COPYRIGHT
+
+Copyright 2010 Seestieto. L<http://seestieto.pl>
+
+This program is free software; you can redistribute it and/or modify it 
+under the same terms as Perl itself

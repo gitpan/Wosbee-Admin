@@ -1,11 +1,14 @@
 ---
 name: Wosbee-Admin
-version: 0.01
+version: 0.02
 author:
   - 'Henrik Ahlgren <pablo@seestieto.pl>'
 abstract: Manage your Wosbee shop with ease
 license: perl
+requires:
+  perl: 5.008
 build_requires:
+  HTML::Form: 0
   HTML::TableExtract: 0
   LWP::UserAgent: 0
   Test::More: 0
@@ -17,6 +20,6 @@ meta-spec:
 provides:
   Wosbee::Admin:
     file: lib/Wosbee/Admin.pm
-    version: 0.01
+    version: 0.02
 resources:
   license: http://dev.perl.org/licenses/

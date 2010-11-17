@@ -7,9 +7,13 @@ my $builder = Module::Build->new(
     license             => 'perl',
     dist_author         => q{Henrik Ahlgren <pablo@seestieto.pl>},
     dist_version_from   => 'lib/Wosbee/Admin.pm',
+    requires            => {
+        'perl'  => '5.008'
+    },
     build_requires => {
         'Test::More' => 0,
         'HTML::TableExtract' => 0,
+        'HTML::Form' => 0,
         'LWP::UserAgent' => 0,
         'Text::CSV::Encoded' => 0
     },

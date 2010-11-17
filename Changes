@@ -1,5 +1,17 @@
 Revision history for Wosbee::Admin
 
+0.02	2010-11-17
+
+	* Scalar version of filemanager_ls now adds '/' to folder names.
+	* Added program wosfile to examples.
+	* Make sure hidden HTML form input fields are not readonly 
+          (so it works when warnings are enabled).
+	* Check for failed login.
+	* filemanager_* methods croaks if the user is missing
+          access to file manager functions.
+	* Documentation improvements.
+	* Require perl 5.008 (oldest tested).
+
 0.01    2010-11-16
 
         * Initial release.

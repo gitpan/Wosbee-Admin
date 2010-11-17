@@ -41,7 +41,7 @@ of the Workspace software with all the fancy integration features.
 
 The purpose of this module is just to make some simple day to day
 tasks, such as uploading style sheet files or generating inventory
-statements, little less painful.
+statements, a little less painful.
 
 B<Please note that this software is written by a third party and is NOT 
 SUPPORTED by Smilehouse.> This software does not use any public APIs. 
@@ -51,6 +51,7 @@ extent permitted by law.
 
 =cut
 
+use 5.008;
 use strict;
 use warnings;
 use LWP::UserAgent;
@@ -61,7 +62,7 @@ use Text::CSV::Encoded;
 use Carp;
 
 use vars qw($VERSION);
-$VERSION = "0.01";
+$VERSION = "0.02";
 
 =head1 CONSTRUCTOR
 
@@ -74,7 +75,7 @@ provided credentials: organization, user and password.
 
 By default, connects to the server L<https://admin.wosbee.com>. 
 The optional named parameter "host" can be used to specify the 
-URL of any other Smilehouse instance, or non-SSL connection.
+URL of any other Workspace server, or non-SSL connection.
 
 =back
 
@@ -98,7 +99,6 @@ sub new {
     push @{ $self->{ua}->requests_redirectable }, 'POST';
 
     # Login 
-    # Note: This does not check if the login succeeds.
     my $r = $self->{ua}->post($self->{host} . "/Login",
                   { Organization => $self->{organization},
                     User         => $self->{user},
@@ -111,6 +111,9 @@ sub new {
     $r = $self->{ua}->request($form->click);
     unless ($r->is_success) {
         croak $r->status_line;
+    }
+    if ($r->content =~ /Smilehouse Workspace Login/) {
+        croak "Login failed";
     }
 
     $r->base =~ m:^(.*)/Index:;
@@ -125,7 +128,7 @@ sub new {
 
 =item get_products_csv()
 
-Retrieve the product inventory and return a flat CSV string. This is the
+Retrieve the product catalog and return a flat CSV string. This is the
 raw CSV file from the Tools -E<gt> Export page without any processing, suitable
 for manipulation with some spreadsheet program, or for backup purposes. 
 
@@ -170,7 +173,7 @@ sub get_products_csv {
 
 =item get_products_parsed()
 
-Retrieve product inventory and parse it into a data structure. 
+Retrieve product catalog and parse it into a data structure. 
 
 Returns a hashref, where the product itemcode is the key and the
 value is a reference to records containing the different PRODUCT_* fields.  
@@ -245,11 +248,11 @@ sub get_products_parsed {
     return \%data; 
 }
 
-=item filemanager_upload(I<FILE> [, I<DIR> ])
+=item filemanager_upload(I<FILE> [, I<DIR> ])
 
 Upload a file using the File manager interface. The I<FILE> parameter
 is a local file name. Unless the optional I<DIR> parameter is given,
-the file is uploaded the root directory.
+the file is uploaded to the root directory.
 
 There is no filemanager_download method, since files can be downloaded
 simply by accessing them with the normal web shop URL.
@@ -268,11 +271,17 @@ sub filemanager_upload {
     }
 
     my $r = $self->{ua}->get("$self->{url}/P3303$dir");
+    if ($r->content =~ /Smilehouse Workspace Login/) {
+        croak "User $self->{user} has no access to file manager screen?";
+    }
     my $form = HTML::Form->parse($r);
     my $input = $form->find_input("pldr_fl", "file")
         or croak "Cannot find input field pldr_fl";
     $input->file($file);
-    $form->value('pldr_ctn', 'pld');
+    my $ctn = $form->find_input("pldr_ctn", "hidden")
+        or croak "Cannot find input field pldr_ctn";
+    $ctn->readonly(0);
+    $ctn->value('pld');
     $form->enctype("multipart/form-data");
     $r = $self->{ua}->request($form->click("pldr_pldbtn"));
     1;
@@ -302,11 +311,17 @@ sub filemanager_upload_zip {
     }
 
     my $r = $self->{ua}->get("$self->{url}/P3303$dir");
+    if ($r->content =~ /Smilehouse Workspace Login/) {
+        croak "User $self->{user} has no access to file manager screen?";
+    }
     my $form = HTML::Form->parse($r);
     my $input = $form->find_input("pldr_zip", "file")
         or croak "Cannot find input field pldr_zip";
     $input->file($zip);
-    $form->value('pldr_ctn', 'zpld');
+    my $ctn = $form->find_input("pldr_ctn", "hidden")
+        or croak "Cannot find input field pldr_ctn";
+    $ctn->readonly(0);
+    $ctn->value('zpld');
     $form->enctype("multipart/form-data");
     $r = $self->{ua}->request($form->click("pldr_zipbtn"));
     1;
@@ -331,9 +346,15 @@ sub filemanager_mkdir {
     }
 
     my $r = $self->{ua}->get("$self->{url}/P3303?dir=$path");
+    if ($r->content =~ /Smilehouse Workspace Login/) {
+        croak "User $self->{user} has no access to file manager screen?";
+    }
     my $form = HTML::Form->parse($r);
     $form->value('pldr_mkd', $dir);
-    $form->value('pldr_ctn', 'mkd');
+    my $ctn = $form->find_input("pldr_ctn", "hidden")
+        or croak "Cannot find input field pldr_ctn";
+    $ctn->readonly(0);
+    $ctn->value('mkd');
     $r = $self->{ua}->request($form->click("pldr_mkdbtn"));
     1;
 }
@@ -355,18 +376,28 @@ sub filemanager_rm {
     }
 
     my $r = $self->{ua}->get("$self->{url}/P3303?dir=$path");
+    if ($r->content =~ /Smilehouse Workspace Login/) {
+        croak "User $self->{user} has no access to file manager screen?";
+    }
     my $form = HTML::Form->parse($r);
-    $form->value('delparam', $file);
-    $form->value('pldr_ctn', 'dlt');
+    my $delparam = $form->find_input("delparam", "hidden")
+        or croak "Cannot find input field delparam";
+    $delparam->readonly(0);
+    $delparam->value($file);
+    my $ctn = $form->find_input("pldr_ctn", "hidden")
+        or croak "Cannot find input field pldr_ctn";
+    $ctn->readonly(0);
+    $ctn->value('dlt');
     $r = $self->{ua}->request($form->click("pldr_mkdbtn"));
     1;
 }
 
 =item filemanager_ls([ I<PATH> ])
 
-Get the directory listing using the File manager interface. In scalar context, return a 
-multiline string somewhat similar to output of ls(1). In list context, return a list of 
-hashrefs with the following keys: name, size, type, date. 
+Get the directory listing using the File manager interface. In scalar
+context, return a multiline string somewhat similar to output of ls(1). 
+In list context, return a list of hashrefs with the following keys: name,
+size, type, date. 
 
 If no PATH is given, the root directory will be listed.
 
@@ -381,6 +412,10 @@ sub filemanager_ls {
         $r = $self->{ua}->get("$self->{url}/P3303?dir=$dir");
     } else {
         $r = $self->{ua}->get("$self->{url}/P3303");
+    }
+
+    if ($r->content =~ /Smilehouse Workspace Login/) {
+        croak "User $self->{user} has no access to file manager screen?";
     }
     my $te = HTML::TableExtract->new(slice_columns => 0,
                                      headers => 
@@ -399,9 +434,12 @@ sub filemanager_ls {
     } else {
         my $str = "";
         for ($ts->rows) {
-            next unless @$_[1];  # "up" link
+            next unless @$_[1];  # no file name, this must be "up" link
             shift @$_;           # dir icon
             @$_[1] =~ s/ bytes//;
+            if (@$_[2] eq 'Folder') {
+                @$_[0] .= "/";
+            }
             $str .= sprintf  "%-40s %10d %-10s %s\n", @$_;
         }
         return $str;
@@ -418,7 +456,7 @@ __END__
 
 It's best to create a separate Workspace admin user account with limited 
 access rights for using this module. If you just want to list your
-inventory, grant the "Products management" access. If you're
+products, grant the "Products management" access. If you're
 going to do filemanager stuff, add "Outlook management". Currently
 this module does not provide any functionality needing additional
 rights.
@@ -427,13 +465,13 @@ In case you store the username and password hardcoded as clertext
 in your scripts, please make sure they are not world readable.
 It's a good idea to change the password from time to time. 
 
-This module uses SSL by default. If you don't have SSLeay
+This module uses SSL by default. If you don't have Crypt::SSLeay
 (or other implementation) installed and are willing to take 
 the risk, set the host parameter to http://admin.wosbee.com in new().
 
 =head1 AUTHOR
 
-Henrik Ahlgren E<lt>pablo@seestieto.plE<gt>
+Henrik Ahlgren E<lt>pablo@seestieto.plE<gt> L<http://seestieto.pl>
 
 =head1 COPYRIGHT
 
